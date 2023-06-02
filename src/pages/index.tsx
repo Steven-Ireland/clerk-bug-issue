@@ -2,10 +2,19 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from 'next/font/google'
 import styles from '@/styles/Home.module.css'
-import { SignedIn, SignedOut, useAuth } from '@clerk/nextjs'
+import { OrganizationSwitcher, SignedIn, SignedOut, UserButton, clerkClient, useAuth } from '@clerk/nextjs'
 import { SignIn } from '@clerk/clerk-react'
+import { GetServerSideProps } from 'next'
+import { buildClerkProps, getAuth } from '@clerk/nextjs/server'
 
 const inter = Inter({ subsets: ['latin'] })
+
+export const getServerSideProps: GetServerSideProps = async ctx => {
+  const { userId } = getAuth(ctx.req)
+  const user = userId ? await clerkClient.users.getUser(userId) : undefined;
+
+  return { props: { ...buildClerkProps(ctx.req, { user }) } }
+}
 
 export default function Home() {
   const auth = useAuth();
@@ -18,10 +27,16 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={`${styles.main} ${inter.className}`}>
+        <p>Login status: {"" + (auth.isSignedIn || false)}</p>
         <SignedOut>
           <SignIn />
         </SignedOut>
-        <p>Login status: {"" + (auth.isSignedIn || false)}</p>
+        <SignedIn>
+          <div>
+            <UserButton />
+            <OrganizationSwitcher />
+          </div>
+        </SignedIn>
       </main>
     </>
   )
